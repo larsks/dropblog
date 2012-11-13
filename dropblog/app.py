@@ -30,7 +30,7 @@ bottle.BaseTemplate.settings['filters'] = { 'markdown': filter_markdown }
 
 session_opts = {
     'session.type': 'file',
-    'session.cookie_expires': 300,
+    'session.cookie_expires': 1800,
     'session.data_dir': os.path.join(os.path.abspath('data'), 'sessions'),
     'session.auto': True,
     'session.invalidate_corrupt': False,
@@ -61,15 +61,18 @@ def dropbox_session(token=None):
 def authenticated(func):
     def _(*args, **kwargs):
         if not request.session.get('authenticated'):
+            print '*** session is not authenticated'
             redirect('/login')
 
         if not 'uid' in request.session:
+            print '*** session has no uid'
             redirect('/login')
 
         uid = request.session['uid']
         u = request.db.query(models.Identity).get(uid)
 
         if u is None:
+            print '*** user with uid = %s not found in database' % uid
             redirect('/login')
 
         dbx = dropbox.client.DropboxClient(
@@ -166,13 +169,15 @@ def error():
 
 @route('/info')
 @authenticated
+@view('info.html')
 def info():
     try:
         account_info = request.dbx.account_info()
     except dropbox.ErrorResponse:
         redirect('/error')
 
-    return str(account_info)
+    return {'title': 'User information',
+            'request': request}
 
 @route('/logout')
 @view('redirect.html')
