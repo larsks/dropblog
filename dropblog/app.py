@@ -174,6 +174,13 @@ def info():
 
     return str(account_info)
 
+@route('/logout')
+@view('redirect.html')
+def logout():
+    request.session.delete()
+    return { 'target': '/' }
+
+
 if __name__ == '__main__':
     models.init('sqlite:///data/dropblog.db', echo=True)
     bottle.run(app=app, reloader=True)
