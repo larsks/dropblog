@@ -5,7 +5,7 @@ import sys
 import urlparse
 
 import bottle
-from bottle import request, route, hook, redirect
+from bottle import request, route, post, hook, redirect
 from bottle import jinja2_view as view
 from bottle import jinja2_template as template
 import beaker.middleware
@@ -14,6 +14,7 @@ from oauth import oauth
 import dropbox
 
 import models
+from utils import dropbox_session
 
 ######################################################################
 
@@ -42,22 +43,6 @@ app = beaker.middleware.SessionMiddleware(bottle.app(), session_opts)
 
 ######################################################################
 
-def dropbox_session(token=None):
-    app_key = request.db.query(models.Setting).get('app_key').value
-    app_secret = request.db.query(models.Setting).get('app_secret').value
-    access_type = request.db.query(models.Setting).get('access_type').value
-
-    sess = dropbox.session.DropboxSession(
-            app_key,
-            app_secret,
-            access_type,
-            )
-
-    if token is not None:
-        sess.set_token(token.key, token.secret)
-
-    return sess
-
 def authenticated(func):
     def _(*args, **kwargs):
         if not request.session.get('authenticated'):
@@ -76,7 +61,7 @@ def authenticated(func):
             redirect('/login')
 
         dbx = dropbox.client.DropboxClient(
-                dropbox_session(
+                dropbox_session(request.db,
                     oauth.OAuthToken(
                         u.dropbox_key,
                         u.dropbox_secret
@@ -91,6 +76,10 @@ def authenticated(func):
 
 ######################################################################
 
+def configured():
+    v = request.db.query(models.Setting).get('app_key')
+    return (v is not None)
+
 @hook('before_request')
 def setup_request():
     db = models.Session()
@@ -99,10 +88,35 @@ def setup_request():
     request.db      = db
     request.session = session
 
+    if not configured() and not request.urlparts.path == '/config':
+        redirect('/config')
+
 @hook('after_request')
 def finish_request():
     request.db.commit()
     request.session.save()
+
+@route('/config')
+@view('config.html')
+def config(message=None):
+    return {'title': 'Application configuration',
+            'message': message}
+
+@post('/config')
+def handle_config():
+    for name in 'app_key', 'app_secret', 'access_type':
+        if not request.params.get(name):
+            return config(message="Missing value for %s." % name)
+
+    for name in 'app_key', 'app_secret', 'access_type':
+        s = models.Setting(
+                name=name,
+                value=request.params.get(name),
+                )
+        request.db.add(s)
+    request.db.commit()
+
+    redirect('/')
 
 @route('/')
 @view('index.html')
@@ -112,7 +126,7 @@ def index():
 @route('/login', method=['GET', 'POST'])
 @view('redirect.html')
 def login():
-    dbx = dropbox_session()
+    dbx = dropbox_session(request.db)
     request_token = dbx.obtain_request_token()
     request.session['request_token'] = (
             request_token.key,
@@ -131,7 +145,7 @@ def callback():
     if not 'request_token' in request.session:
         redirect('/error')
 
-    dbx = dropbox_session()
+    dbx = dropbox_session(request.db)
 
     request_token = oauth.OAuthToken(
             *request.session['request_token'])
@@ -150,7 +164,7 @@ def callback():
         u.dropbox_secret = access_token.secret
     else:
         u = models.Identity(
-                uid=account_info['uid'],
+                id=account_info['uid'],
                 display_name=account_info['display_name'],
                 email=account_info['email'],
                 dropbox_key = access_token.key,
@@ -158,8 +172,8 @@ def callback():
                 )
         request.db.add(u)
 
+    request.session['uid'] = u.id
     request.session['authenticated'] = True
-    request.session['uid'] = u.uid
 
     return { 'target': '/' }
 

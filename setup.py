@@ -13,7 +13,7 @@ setup(
     install_requires = [
         'bottle',
         'beaker',
-        'oath',
+        'oauth',
         'dropbox',
         'markdown',
         'sqlalchemy',

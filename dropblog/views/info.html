@@ -4,7 +4,7 @@
 {% filter markdown %}
 Hello, {{request.user.display_name}}.
 
-- Your dropbox UID is {{request.user.uid}}.
+- Your dropbox UID is {{request.user.id}}.
 - Your email address is {{request.user.email}}
 {% endfilter %}
 {% endblock %}

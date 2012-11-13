@@ -1,0 +1,34 @@
+{% extends "layout.html" %}
+
+{% block content %}
+{% if message %}
+<div id="message">
+  {{message}}
+</div>
+{% endif %}
+{% filter markdown %}
+DropBlox has not been configured.  Please provide the following information:
+{% endfilter %}
+
+<form method="post">
+  <table>
+    <tr>
+      <td class="label">Application key</td>
+      <td><input name="app_key"/></td>
+    </tr>
+    <tr>
+      <td class="label">Application secret</td>
+      <td><input name="app_secret"/></td>
+    </tr>
+    <tr>
+      <td class="label">Access type</td>
+      <td>
+        <input type="radio" name="access_type" value="app_folder" checked="1"/>App folder<br/>
+        <input type="radio" name="access_type" value="dropbox"/>Full DropBox</td>
+    </tr>
+  </table>
+
+  <input type="submit" name="submit" value="Save settings"/>
+</form>
+{% endblock %}
+
