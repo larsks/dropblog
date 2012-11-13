@@ -16,6 +16,8 @@ setup(
         'oath',
         'dropbox',
         'markdown',
+        'sqlalchemy',
+        'jinja2',
         ],
     entry_points = {
 #        'console_scripts': [
