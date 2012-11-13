@@ -35,6 +35,9 @@ def main():
             blogs[blog.name] = blog
         
         try:
+            md = dbx.metadata('/')
+            print 'Metadata for app folder:', md
+
             entries, reset, cursor = dbx.delta(cursor)
             for entry in entries:
                 print entry
