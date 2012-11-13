@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+
+{% block content %}
+{% filter markdown %}
+This is the index page.  Is it not nifty?
+
+{% if not request.session.authenticated %}
+<form method="post" action="/login">
+  <input type="submit" value="Connect with Dropbox" name="login"/>
+</form>
+{% endif %}
+{% endfilter %}
+{% endblock %}
+
