@@ -46,8 +46,9 @@ class Blog (Base):
 class Post (Base):
     __tablename__ = 'posts'
 
-    id = Column(Integer, primary_key=True)
-    path = Column(String)
+    # This is the path to the source file.
+    id = Column(String, primary_key=True)
+
     slug = Column(String)
     title = Column(String)
     date = Column(String)
