@@ -59,14 +59,14 @@ def main():
             if entry[1] and entry[1]['is_dir']:
                 continue
 
-            mo = re.match('/sites/(?P<blog>[^/]*)/posts/(?P<post>[^/]*\.md)', entry[0])
+            mo = re.match('/sites/(?P<blog>[^/]*)/posts/(?P<post>[^/]*\.md$)', entry[0])
             if not mo or mo.group('blog') not in blogs:
                 continue
 
             print '->', entry[0]
 
             if entry[1] is None:
-                db.query(Post).filter(Post.path == entry[0]).delete()
+                db.query(Post).filter(Post.id == entry[0]).delete()
             else:
                 doc = mailbox.Message(dbx.get_file(entry[0]))
 

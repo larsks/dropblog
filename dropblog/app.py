@@ -12,6 +12,9 @@ import beaker.middleware
 from oauth import oauth
 import dropbox
 
+import sqlalchemy
+from sqlalchemy import and_
+
 import models
 from utils import dropbox_session, filter_markdown
 
@@ -69,6 +72,10 @@ def authenticated(func):
     return _
 
 ######################################################################
+
+@hook('app_reset')
+def appreset():
+    print '*** RESET ***'
 
 def configured():
     v = request.db.query(models.Setting).get('app_key')
@@ -193,8 +200,27 @@ def logout():
     request.session.delete()
     return { 'target': '/' }
 
+@route('/:blog/post/:slug')
+@view('post.html')
+def render_blog_post(blog, slug):
+    try:
+        p = request.db.query(models.Post).join(models.Post.blog).filter(
+                and_(models.Post.slug == slug,
+                    models.Blog.name == blog)).one()
+        return {'title': p.title, 'post': p}
+    except sqlalchemy.orm.exc.NoResultFound:
+        redirect('/error')
+
+@route('/:blog')
+@view('blogmain.html')
+def render_blog_main(blog):
+    try:
+        blog = request.db.query(models.Blog).filter(models.Blog.name == blog).one()
+        return {'title': blog.title, 'blog': blog}
+    except (sqlalchemy.orm.exc.NoResultFound, KeyError):
+        redirect('/error')
 
 if __name__ == '__main__':
-    models.init('sqlite:///data/dropblog.db', echo=True)
+    models.init('sqlite:///data/dropblog.db')
     bottle.run(app=app, reloader=True)
 

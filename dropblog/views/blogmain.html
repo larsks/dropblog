@@ -1,0 +1,10 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<ul>
+{%for post in blog.posts%}
+<li><a href="/{{blog.name}}/post/{{post.slug}}">{{post.title}}</a></li>
+{% endfor %}
+</ul>
+{% endblock %}
+
