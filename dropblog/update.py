@@ -86,6 +86,13 @@ def main():
                 p.published = doc.get('published', 'True') == 'True'
                 p.date = doc.get('date', p.date)
 
+                html = utils.filter_markdown(doc.get_payload())
+
+                if not p.content:
+                    p.content = Content()
+
+                p.content.html = html
+
         owner.dropbox_cursor = delta['cursor']
         db.commit()
 

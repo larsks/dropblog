@@ -30,7 +30,7 @@ class Identity (Base):
     dropbox_secret = Column(String)
     dropbox_cursor = Column(String)
 
-    blogs = relationship("Blog", backref="owner")
+    blogs = relationship('Blog', backref='owner')
 
 class Blog (Base):
     __tablename__ = 'blogs'
@@ -39,9 +39,9 @@ class Blog (Base):
     name = Column(String)
     title = Column(String)
 
-    posts = relationship("Post", backref="blog")
+    posts = relationship('Post', backref='blog')
 
-    owner_id = Column(Integer, ForeignKey("identities.id"))
+    owner_id = Column(Integer, ForeignKey('identities.id'))
 
 class Post (Base):
     __tablename__ = 'posts'
@@ -54,7 +54,16 @@ class Post (Base):
     date = Column(String)
     published = Column(Boolean)
 
-    blog_id = Column(Integer, ForeignKey("blogs.id"))
+    blog_id = Column(Integer, ForeignKey('blogs.id'))
+
+    content = relationship('Content', uselist=False, backref='post')
+
+class Content (Base):
+    __tablename__ = 'content'
+
+    id = Column(Integer, primary_key=True)
+    post_id = Column(Integer, ForeignKey('posts.id'))
+    html = Column(Text)
 
 class ForeignKeysListener(PoolListener):
     def connect(self, dbapi_con, con_record):

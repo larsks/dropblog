@@ -9,19 +9,13 @@ from bottle import request, route, post, hook, redirect
 from bottle import jinja2_view as view
 from bottle import jinja2_template as template
 import beaker.middleware
-import markdown
 from oauth import oauth
 import dropbox
 
 import models
-from utils import dropbox_session
+from utils import dropbox_session, filter_markdown
 
 ######################################################################
-
-def filter_markdown(s):
-    '''Allows us to embed Markdown markup inside
-    {% filter markdown %} blocks.'''
-    return markdown.markdown(s)
 
 bottle.TEMPLATE_PATH.insert(0, os.path.join(
     os.path.dirname(__file__), 'views'))

@@ -2,6 +2,6 @@ bottle
 beaker
 oauth
 dropbox
-markdown
+misaka
 sqlalchemy
 jinja2
