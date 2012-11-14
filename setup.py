@@ -10,15 +10,7 @@ setup(
     author_email = 'lars@oddbit.com',
     version = "1.00",
     packages = find_packages(),
-    install_requires = [
-        'bottle',
-        'beaker',
-        'oauth',
-        'dropbox',
-        'markdown',
-        'sqlalchemy',
-        'jinja2',
-        ],
+    install_requires = open('requirements.txt').readlines(),
     entry_points = {
 #        'console_scripts': [
 #            'mimecraft = mimecraft.main:main',

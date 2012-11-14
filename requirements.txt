@@ -1,0 +1,7 @@
+bottle
+beaker
+oauth
+dropbox
+markdown
+sqlalchemy
+jinja2
