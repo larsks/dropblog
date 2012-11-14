@@ -26,6 +26,7 @@ def main():
     for owner in db.query(models.Identity):
         blogs = {}
         cursor = owner.dropbox_cursor
+        print 'Found cursor:', cursor
         dbx.session.set_token(owner.dropbox_key, owner.dropbox_secret)
 
         account_info = dbx.account_info()
@@ -34,22 +35,12 @@ def main():
         for blog in owner.blogs:
             blogs[blog.name] = blog
         
-        try:
-            md = dbx.metadata('/')
-            print 'Metadata for app folder:', md
+        delta = dbx.delta(cursor)
 
-            entries, reset, cursor = dbx.delta(cursor)
-            for entry in entries:
-                print entry
-        except dropbox.rest.ErrorResponse, detail:
-            print ' ERROR:', detail.error_msg
-            print '       ', detail.message
-            print '       ', detail.user_error_msg
-            print 'REASON:', detail.reason
-            print 'STATUS:', detail.status
-            raise
+        for entry in delta['entries']:
+            print entry[0]
 
-        owner.dropbox_cursor = cursor
+        owner.dropbox_cursor = delta['cursor']
         db.commit()
 
 if __name__ == '__main__':
