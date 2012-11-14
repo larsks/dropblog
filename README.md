@@ -1,2 +1,4 @@
-This is a simple Dropbox-backed blogging platform.
+dropblog
+========
 
+Dropbox backed blogging platform.
