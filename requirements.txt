@@ -5,3 +5,4 @@ dropbox
 misaka
 sqlalchemy
 jinja2
+PyYAML

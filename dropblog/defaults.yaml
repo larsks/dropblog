@@ -1,0 +1,12 @@
+---
+cache:
+  cache.type: file
+  cache.data_dir: {{data_dir}}/cache/data
+  cache.lock_dir: {{data_dir}}/cache/lock
+session:
+  session.type: file
+  session.cookie_expires: 1800
+  session.data_dir: {{data_dir}}/sessions
+  session.auto: True
+  session.invalidate_corrupt: False
+

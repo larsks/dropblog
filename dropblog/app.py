@@ -16,36 +16,29 @@ import dropbox
 import sqlalchemy
 from sqlalchemy import and_
 
-import models
+from models import *
+import settings
 from dropboxloader import DropboxLoader
 from utils import dropbox_session, filter_markdown
 
 ######################################################################
 
-logging.basicConfig(
-        level=logging.DEBUG,
-        format='%(asctime)s %(levelname)s %(name)s: %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S')
+def setup_logging():
+    levelname = settings.config.get('loglevel', 'INFO')
+    level = getattr(logging, levelname)
+
+    logging.basicConfig(
+            level=level,
+            format='%(asctime)s %(levelname)s %(name)s: %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S')
+
+    logging.info('logging at level %s' % levelname)
 
 bottle.TEMPLATE_PATH.insert(0, os.path.join(
     os.path.dirname(__file__), 'views'))
 
 # Global install a Markdown filter.
 bottle.BaseTemplate.settings['filters'] = { 'markdown': filter_markdown }
-
-session_opts = {
-    'session.type': 'file',
-    'session.cookie_expires': 1800,
-    'session.data_dir': os.path.join(os.path.abspath('data'), 'sessions'),
-    'session.auto': True,
-    'session.invalidate_corrupt': False,
-}
-
-cache_opts = {
-    'cache.type': 'file',
-    'cache.data_dir': os.path.join(os.path.abspath('data'), 'cache', 'data'),
-    'cache.lock_dir': os.path.join(os.path.abspath('data'), 'cache', 'lock'),
-}
 
 app = beaker.middleware.SessionMiddleware(bottle.app(), session_opts)
 
@@ -242,6 +235,9 @@ def get_user_theme_resource(uid, theme, filename):
         return loader.get('/sites/themes/%s/%s' % (theme, filename))
     except KeyError:
         abort(404, 'Page not found.')
+
+settings.load_config()
+setup_logging()
 
 if __name__ == '__main__':
     models.init('sqlite:///data/dropblog.db')

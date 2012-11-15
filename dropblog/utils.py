@@ -3,15 +3,16 @@
 import os
 import sys
 
+import bottle
 import misaka
 import dropbox
 
-import models
+from models import *
 
 def dropbox_session(db, key=None, secret=None):
-    app_key = db.query(models.Setting).get('app_key').value
-    app_secret = db.query(models.Setting).get('app_secret').value
-    access_type = db.query(models.Setting).get('access_type').value
+    app_key = db.query(Setting).get('app_key').value
+    app_secret = db.query(Setting).get('app_secret').value
+    access_type = db.query(Setting).get('access_type').value
 
     sess = dropbox.session.DropboxSession(
             app_key,
@@ -24,17 +25,34 @@ def dropbox_session(db, key=None, secret=None):
 
     return sess
 
+def dropbox_client_for(uid):
+    u = Session().query(Models).get(uid)
+    if not u:
+        raise KeyError(uid)
+
+    sess = dropbox_session(db, u.key, u.secret)
+    return dropbox.client.DropboxClient(sess)
+
 def filter_markdown(s):
     '''Transform Markdown into HTML.'''
     return misaka.html(s,
             extensions=misaka.EXT_TABLES|misaka.EXT_NO_INTRA_EMPHASIS|misaka.EXT_AUTOLINK,
             render_flags=misaka.HTML_USE_XHTML)
 
-def methodroute(f):
+def hook(name):
+    '''Sets the __hook__ attribute on a class method.  This is used by
+    setup_routes() to configure Bottle routing on a class instance.'''
+    def _(f):
+        f.__hook__ = name
+        return f
+
+    return _
+
+def route(path):
     '''Sets the __route__ attribute on a class method.  This is used by
     setup_routes() to configure Bottle routing on a class instance.'''
     def _(f):
-        f.__route__ = route
+        f.__route__ = path
         return f
 
     return _
@@ -44,5 +62,9 @@ def routeapp(thing):
         attr = getattr(thing, kw)
         route = getattr(attr, '__route__', None)
         if route:
-            bottle.route(route, attr)
+            bottle.route(route)(attr)
+
+        hook = getattr(attr, '__hook__', None)
+        if hook:
+            bottle.hook(hook)(attr)
 

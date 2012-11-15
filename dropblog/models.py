@@ -19,8 +19,8 @@ class Setting (Base):
     name = Column(String, primary_key=True)
     value = Column(Text)
 
-class Identity (Base):
-    __tablename__ = 'identities'
+class User (Base):
+    __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True)
     display_name = Column(String)
@@ -70,7 +70,7 @@ class ForeignKeysListener(PoolListener):
     def connect(self, dbapi_con, con_record):
         db_cursor = dbapi_con.execute('pragma foreign_keys=ON')
 
-def init(dburi, echo=False):
+def initmodels(dburi, echo=False):
     listeners = []
 
     # Enable foreign key enforcement under sqlite.

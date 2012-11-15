@@ -4,31 +4,19 @@ import os
 import sys
 import logging
 
-from beaker.cache import CacheManager
-from beaker.util import parse_cache_config_options
-
 import sqlalchemy
 import dropbox
 
 from utils import dropbox_session
 from models import *
 
-default_cache_opts = {
-    'cache.type': 'file',
-    'cache.data_dir': '/tmp/cache/data',
-    'cache.lock_dir': '/tmp/cache/lock',
-}
-
 class DropboxLoader (object):
-    def __init__ (self, uid, cache_opts=None):
-        if cache_opts is None:
-            cache_opts = default_cache_opts
-
+    def __init__ (self, uid, cachemgr):
         self.log = logging.getLogger('dropblog.dropboxloader.%s' % uid)
         self.uid = uid
-        self.cache = CacheManager(
+        self.cache = cachemgr(
                 **parse_cache_config_options(cache_opts)).get_cache(
-                        'dropbox-%s' % uid)
+                        'dropbox/%s' % uid)
 
     def get(self, path):
         self.log.debug('get %s:%s' % (self.uid, path))
@@ -37,10 +25,7 @@ class DropboxLoader (object):
             self.log.debug('load %s:%s' % (self.uid, path))
 
             try:
-                s = Session()
-                u = s.query(Identity).get(self.uid)
-                dbx = dropbox_session(s, u.dropbox_key, u.dropbox_secret)
-                client = dropbox.client.DropboxClient(dbx)
+                dbx = dropbox_client_for(self.uid)
                 fd = client.get_file(path)
                 data = fd.read()
                 fd.close()
