@@ -8,7 +8,7 @@ import dropbox
 
 import models
 
-def dropbox_session(db, token=None):
+def dropbox_session(db, key=None, secret=None):
     app_key = db.query(models.Setting).get('app_key').value
     app_secret = db.query(models.Setting).get('app_secret').value
     access_type = db.query(models.Setting).get('access_type').value
@@ -19,8 +19,8 @@ def dropbox_session(db, token=None):
             access_type,
             )
 
-    if token is not None:
-        sess.set_token(token.key, token.secret)
+    if key is not None and secret is not None:
+        sess.set_token(key, secret)
 
     return sess
 

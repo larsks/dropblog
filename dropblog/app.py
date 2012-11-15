@@ -3,9 +3,10 @@
 import os
 import sys
 import urlparse
+import logging
 
 import bottle
-from bottle import request, route, post, hook, redirect
+from bottle import request, route, post, hook, redirect, abort
 from bottle import jinja2_view as view
 from bottle import jinja2_template as template
 import beaker.middleware
@@ -16,9 +17,15 @@ import sqlalchemy
 from sqlalchemy import and_
 
 import models
+from dropboxloader import DropboxLoader
 from utils import dropbox_session, filter_markdown
 
 ######################################################################
+
+logging.basicConfig(
+        level=logging.DEBUG,
+        format='%(asctime)s %(levelname)s %(name)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S')
 
 bottle.TEMPLATE_PATH.insert(0, os.path.join(
     os.path.dirname(__file__), 'views'))
@@ -34,7 +41,11 @@ session_opts = {
     'session.invalidate_corrupt': False,
 }
 
-print session_opts
+cache_opts = {
+    'cache.type': 'file',
+    'cache.data_dir': os.path.join(os.path.abspath('data'), 'cache', 'data'),
+    'cache.lock_dir': os.path.join(os.path.abspath('data'), 'cache', 'lock'),
+}
 
 app = beaker.middleware.SessionMiddleware(bottle.app(), session_opts)
 
@@ -58,11 +69,8 @@ def authenticated(func):
             redirect('/login')
 
         dbx = dropbox.client.DropboxClient(
-                dropbox_session(request.db,
-                    oauth.OAuthToken(
-                        u.dropbox_key,
-                        u.dropbox_secret
-                        )))
+                dropbox_session(request.db, u.dropbox_key,
+                    u.dropbox_secret))
 
         request.user = u
         request.dbx = dbx
@@ -158,20 +166,23 @@ def callback():
     except dropbox.ErrorResponse:
         redirect('/error')
 
-    u = request.db.query(models.Identity).get(account_info['uid'])
-
-    if u:
+    try:
+        u = request.db.query(models.Identity).filter(
+                models.Identity.dropbox_uid == account_info['uid']).one()
         u.dropbox_key = access_token.key
         u.dropbox_secret = access_token.secret
-    else:
+    except sqlalchemy.orm.exc.NoResultFound:
         u = models.Identity(
-                id=account_info['uid'],
                 display_name=account_info['display_name'],
                 email=account_info['email'],
+                dropbox_uid=account_info['uid'],
                 dropbox_key = access_token.key,
                 dropbox_secret = access_token.secret,
                 )
         request.db.add(u)
+
+        # We need to commit here so that u.id is available.
+        request.db.commit()
 
     request.session['uid'] = u.id
     request.session['authenticated'] = True
@@ -209,7 +220,7 @@ def render_blog_post(blog, slug):
                     models.Blog.name == blog)).one()
         return {'title': p.title, 'post': p}
     except sqlalchemy.orm.exc.NoResultFound:
-        redirect('/error')
+        abort(404, 'Page not found.')
 
 @route('/:blog')
 @view('blogmain.html')
@@ -218,7 +229,19 @@ def render_blog_main(blog):
         blog = request.db.query(models.Blog).filter(models.Blog.name == blog).one()
         return {'title': blog.title, 'blog': blog}
     except (sqlalchemy.orm.exc.NoResultFound, KeyError):
-        redirect('/error')
+        abort(404, 'Page not found.')
+
+@route('/theme/u/:theme/theme.html')
+def get_user_theme_html(theme):
+    pass
+
+@route('/theme/u/:uid/:theme/:filename')
+def get_user_theme_resource(uid, theme, filename):
+    try:
+        loader = DropboxLoader(uid, cache_opts=cache_opts)
+        return loader.get('/sites/themes/%s/%s' % (theme, filename))
+    except KeyError:
+        abort(404, 'Page not found.')
 
 if __name__ == '__main__':
     models.init('sqlite:///data/dropblog.db')

@@ -26,6 +26,7 @@ class Identity (Base):
     display_name = Column(String)
     email = Column(String)
 
+    dropbox_uid = Column(Integer)
     dropbox_key = Column(String)
     dropbox_secret = Column(String)
     dropbox_cursor = Column(String)
