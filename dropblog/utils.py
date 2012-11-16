@@ -39,25 +39,7 @@ def filter_markdown(s):
             extensions=misaka.EXT_TABLES|misaka.EXT_NO_INTRA_EMPHASIS|misaka.EXT_AUTOLINK,
             render_flags=misaka.HTML_USE_XHTML)
 
-def hook(name):
-    '''Sets the __hook__ attribute on a class method.  This is used by
-    setup_routes() to configure Bottle routing on a class instance.'''
-    def _(f):
-        f.__hook__ = name
-        return f
-
-    return _
-
-def route(path):
-    '''Sets the __route__ attribute on a class method.  This is used by
-    setup_routes() to configure Bottle routing on a class instance.'''
-    def _(f):
-        f.__route__ = path
-        return f
-
-    return _
-
-def routeapp(thing):
+def route_instance(thing):
     for kw in dir(thing):
         attr = getattr(thing, kw)
         route = getattr(attr, '__route__', None)

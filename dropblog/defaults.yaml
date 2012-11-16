@@ -1,4 +1,5 @@
 ---
+access_type: app_folder
 cache:
   cache.type: file
   cache.data_dir: {{data_dir}}/cache/data

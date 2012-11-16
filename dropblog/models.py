@@ -42,7 +42,7 @@ class Blog (Base):
 
     posts = relationship('Post', backref='blog')
 
-    owner_id = Column(Integer, ForeignKey('identities.id'))
+    owner_id = Column(Integer, ForeignKey('users.id'))
 
 class Post (Base):
     __tablename__ = 'posts'
