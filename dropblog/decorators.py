@@ -3,9 +3,13 @@
 import os
 import sys
 import logging
+import urllib
 
 import bottle
 from bottle import request, response, redirect, abort
+import dropbox
+
+from models import *
 
 class decorator (object):
     pass
@@ -16,9 +20,8 @@ class content_type (decorator):
 
     def __call__(self, f):
         def _(*args, **kwargs):
-            res = f(*args, **kwargs)
             response.content_type = self._content_type
-            return res
+            return f(*args, **kwargs)
 
         return _
 
@@ -52,11 +55,13 @@ class authenticated (decorator):
     def __call__(self, *args, **kwargs):
         if not request.session.get('authenticated'):
             self.log.info('session is not authenticated')
-            redirect('/login')
+            redirect('/login?%s' % (
+                urllib.urlencode(dict(url=request.url))))
 
         if not 'uid' in request.session:
             self.log.warn('session is missing uid')
-            redirect('/login')
+            redirect('/login?%s' % (
+                urllib.urlencode(dict(url=request.url))))
 
         uid = request.session['uid']
         user = request.db.query(User).get(uid)
@@ -66,14 +71,16 @@ class authenticated (decorator):
         # dropbox to re-create database entry.
         if user is None:
             self.log.warn('user with uid=%s not found in database', uid)
-            redirect('/login')
+            redirect('/login?%s' % (
+                urllib.urlencode(dict(url=request.url))))
 
         request.user = user
 
-        request.box = dropbox.client.DropboxClient(request.box,
+        request.box.set_token(
                 user.dropbox_key,
                 user.dropbox_secret,
                 )
+        request.box = dropbox.client.DropboxClient(request.box)
 
         return self.f(*args, **kwargs)
 

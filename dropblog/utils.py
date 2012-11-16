@@ -2,36 +2,13 @@
 
 import os
 import sys
+import urllib
 
 import bottle
 import misaka
 import dropbox
 
 from models import *
-
-def dropbox_session(db, key=None, secret=None):
-    app_key = db.query(Setting).get('app_key').value
-    app_secret = db.query(Setting).get('app_secret').value
-    access_type = db.query(Setting).get('access_type').value
-
-    sess = dropbox.session.DropboxSession(
-            app_key,
-            app_secret,
-            access_type,
-            )
-
-    if key is not None and secret is not None:
-        sess.set_token(key, secret)
-
-    return sess
-
-def dropbox_client_for(uid):
-    u = Session().query(Models).get(uid)
-    if not u:
-        raise KeyError(uid)
-
-    sess = dropbox_session(db, u.key, u.secret)
-    return dropbox.client.DropboxClient(sess)
 
 def filter_markdown(s):
     '''Transform Markdown into HTML.'''
