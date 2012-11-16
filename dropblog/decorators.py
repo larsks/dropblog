@@ -2,6 +2,7 @@
 
 import os
 import sys
+import logging
 
 import bottle
 from bottle import request, response, redirect, abort
@@ -46,14 +47,15 @@ class hook (decorator):
 class authenticated (decorator):
     def __init__(self, f):
         self.f = f
+        self.log = logging.getLogger('dropblog.authenticated')
 
-    def __call__(self, other, *args, **kwargs):
+    def __call__(self, *args, **kwargs):
         if not request.session.get('authenticated'):
-            other.log.info('session is not authenticated')
+            self.log.info('session is not authenticated')
             redirect('/login')
 
         if not 'uid' in request.session:
-            other.log.warn('session is missing uid')
+            self.log.warn('session is missing uid')
             redirect('/login')
 
         uid = request.session['uid']
@@ -63,7 +65,7 @@ class authenticated (decorator):
         # the session was authenticated.  Have them reconnect with
         # dropbox to re-create database entry.
         if user is None:
-            other.log.warn('user with uid=%s not found in database', uid)
+            self.log.warn('user with uid=%s not found in database', uid)
             redirect('/login')
 
         request.user = user
@@ -73,5 +75,5 @@ class authenticated (decorator):
                 user.dropbox_secret,
                 )
 
-        return self.f(other, *args, **kwargs)
+        return self.f(*args, **kwargs)
 
